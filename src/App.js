@@ -78,7 +78,7 @@ function App() {
       textToCopy += `\n$${value} / Ct = ${parseFloat(
         Math.ceil(
             ((formData["totalWithoutRound"] + formData["roundWeight"] * value) *
-            1.18)/10
+            1.17)/10
         )*10
       )}`;
     });
@@ -93,7 +93,7 @@ function App() {
   //     textToCopy += `\n${value.name} = $${parseFloat(
   //       Math.ceil(
   //           ((formData["totalWithoutRound"] + formData["roundWeight"] * `${value.value}`) *
-  //           1.18)/10
+  //           1.17)/10
   //       )*10
   //     )}`;
   //   });
@@ -107,12 +107,12 @@ function App() {
   [250, 275, 325, 400, 450].map((value) => {
     textToCopy += `\n$${value} / Ct = ${parseFloat(
       Math.ceil(
-        ((formData["totalWithoutRound"] + formData["roundWeight"] * value) * 1.18) / 10
+        ((formData["totalWithoutRound"] + formData["roundWeight"] * value) * 1.17) / 10
       ) * 10
     )}`;
   });
 
-  textToCopy += "\n\nIncluding 15% Tariff.";
+  // textToCopy += "\n\nIncluding 15% Tariff.";
 
   navigator.clipboard.writeText(textToCopy);
 }
@@ -327,13 +327,13 @@ function App() {
                             {isNaN(parseFloat(formData["roundWeight"]))
                               ? Math.ceil(
                                   ((formData["totalWithoutRound"] + 0 * value) *
-                                    1.18) /
+                                    1.17) /
                                     10
                                 ) * 10
                               : Math.ceil(
                                   ((formData["totalWithoutRound"] +
                                     value * formData["roundWeight"]) *
-                                    1.18) /
+                                    1.17) /
                                     10
                                 ) * 10}
                           </span>
@@ -342,11 +342,11 @@ function App() {
                     })}
                   </div>
 
-                  <div className="col-12 mt-2">
-                    <p className="text-muted" style={{ fontSize: '16px', width: '100%' }}>
-                      Including 15% Tariff.
-                    </p>
-                  </div>
+                  {/*<div className="col-12 mt-2">*/}
+                  {/*  <p className="text-muted" style={{ fontSize: '16px', width: '100%' }}>*/}
+                  {/*    Including 15% Tariff.*/}
+                  {/*  </p>*/}
+                  {/*</div>*/}
 
                   <div className="position-absolute end-0 ps-0 w-auto">
                     <button onClick={clipBoadHandler} className="btn copy">
@@ -378,13 +378,13 @@ function App() {
           {/*                  {isNaN(parseFloat(formData["roundWeight"]))*/}
           {/*                    ? Math.ceil(*/}
           {/*                        ((formData["totalWithoutRound"] + 0 * value.value) **/}
-          {/*                          1.18) /*/}
+          {/*                          1.17) /*/}
           {/*                          10*/}
           {/*                      ) * 10*/}
           {/*                    : Math.ceil(*/}
           {/*                        ((formData["totalWithoutRound"] +*/}
           {/*                          value.value * formData["roundWeight"]) **/}
-          {/*                          1.18) /*/}
+          {/*                          1.17) /*/}
           {/*                          10*/}
           {/*                      ) * 10}*/}
           {/*                </span>*/}

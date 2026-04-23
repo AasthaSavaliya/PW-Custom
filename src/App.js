@@ -3,9 +3,33 @@ import logo from "./assets/Black-Font.png";
 import copy from "./assets/clippy.svg";
 import "./App.css";
 
+// Developer-defined defaults. Change these in code to update the baseline price.
+// User edits are saved to localStorage and override these until cleared.
+const KARAT_OPTIONS = [
+  { key: "10K", defaultPrice: 82 },
+  { key: "14K", defaultPrice: 110 },
+  { key: "18K", defaultPrice: 140 },
+  { key: "925", defaultPrice: 10 },
+];
+
+function loadGoldPrices() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("pw_gold_prices") || "{}");
+    return KARAT_OPTIONS.reduce((acc, { key, defaultPrice }) => {
+      acc[key] = saved[key] != null ? Number(saved[key]) : defaultPrice;
+      return acc;
+    }, {});
+  } catch {
+    return KARAT_OPTIONS.reduce((acc, { key, defaultPrice }) => {
+      acc[key] = defaultPrice;
+      return acc;
+    }, {});
+  }
+}
 
 function App() {
   let initialFormData = {
+    goldKarat: "10K",
     goldPrice: 82,
     goldWeight: "",
     roundWeight: "",
@@ -21,7 +45,11 @@ function App() {
     totalWithoutRound: 0,
   };
 
-  const [formData, setFormData] = useState(initialFormData);
+  const [goldPrices, setGoldPrices] = useState(loadGoldPrices);
+  const [formData, setFormData] = useState(() => ({
+    ...initialFormData,
+    goldPrice: loadGoldPrices()["10K"],
+  }));
 
   function handleChange(fieldName, e) {
     setFormData((prevState) => {
@@ -71,49 +99,47 @@ function App() {
     });
   }
 
-  function clipBoadHandler(e) {
-    e.preventDefault();
-    let textToCopy = "";
-    [250, 275, 325, 400, 450].map((value) => {
-      textToCopy += `\n$${value} / Ct = ${parseFloat(
-        Math.ceil(
-            ((formData["totalWithoutRound"] + formData["roundWeight"] * value) *
-            1.17)/10
-        )*10
-      )}`;
+  // Karat dropdown changed — load saved price for that karat
+  function handleKaratChange(karat) {
+    const price = goldPrices[karat];
+    setFormData((prev) => {
+      const updated = { ...prev, goldKarat: karat, goldPrice: price };
+      updated["goldTotal"] = isNaN(parseFloat(updated["goldWeight"]))
+        ? 0
+        : price * parseFloat(updated["goldWeight"]);
+      updated["totalWithoutRound"] =
+        updated["goldTotal"] + updated["baguetteTotal"] + updated["miscTotal"];
+      return updated;
     });
-
-    navigator.clipboard.writeText(textToCopy);
   }
 
-  // function clipBoadHandler2(e) {
-  //   e.preventDefault();
-  //   let textToCopy = "";
-  //   [{name:'TTLB',value:250}, {name:'SI',value:275}, {name:'SI/ VS', value:325}, {name:'VS',value:400}, {name:'VS/ VVS', value:450}].map((value) => {
-  //     textToCopy += `\n${value.name} = $${parseFloat(
-  //       Math.ceil(
-  //           ((formData["totalWithoutRound"] + formData["roundWeight"] * `${value.value}`) *
-  //           1.17)/10
-  //       )*10
-  //     )}`;
-  //   });
-  //
-  //   navigator.clipboard.writeText(textToCopy);
-  // }
+  // User manually edited the price — save to localStorage for this karat
+  function handleGoldPriceEdit(value) {
+    const price = value === "" ? 0 : parseFloat(value) || 0;
+    const updatedPrices = { ...goldPrices, [formData["goldKarat"]]: price };
+    setGoldPrices(updatedPrices);
+    localStorage.setItem("pw_gold_prices", JSON.stringify(updatedPrices));
+    setFormData((prev) => {
+      const updated = { ...prev, goldPrice: price };
+      updated["goldTotal"] = isNaN(parseFloat(updated["goldWeight"]))
+        ? 0
+        : price * parseFloat(updated["goldWeight"]);
+      updated["totalWithoutRound"] =
+        updated["goldTotal"] + updated["baguetteTotal"] + updated["miscTotal"];
+      return updated;
+    });
+  }
 
   function clipBoadHandler(e) {
   e.preventDefault();
   let textToCopy = "";
-  [250, 275, 325, 400, 450].map((value) => {
+  [250, 275, 325, 400, 450].forEach((value) => {
     textToCopy += `\n$${value} / Ct = ${parseFloat(
       Math.ceil(
         ((formData["totalWithoutRound"] + formData["roundWeight"] * value) * 1.17) / 10
       ) * 10
     )}`;
   });
-
-  // textToCopy += "\n\nIncluding 15% Tariff.";
-
   navigator.clipboard.writeText(textToCopy);
 }
 
@@ -176,25 +202,25 @@ function App() {
             </div>
 
             <div className="input-group mb-3 pe-5">
-              <label>$&nbsp;</label>
-              {/*<input*/}
-              {/*  name="goldPrice"*/}
-              {/*  onChange={handleChange.bind(this, "goldPrice")}*/}
-              {/*  type="number"*/}
-              {/*  className="form-control text-center"*/}
-              {/*  aria-label="Rate"*/}
-              {/*  value={formData["goldPrice"]}*/}
-              {/*/>*/}
-
               <select
-                  onChange={handleChange.bind(this, "goldPrice")}
-                  name="goldPrices"
-                >
-                  <option value={82}>10K : 82</option>
-                  <option value={110}>14K : 110</option>
-                  <option value={140}>18K : 140</option>
-                  <option value={10}>925 : 10</option>
-                </select>
+                onChange={(e) => handleKaratChange(e.target.value)}
+                value={formData["goldKarat"]}
+                name="goldKarat"
+              >
+                <option value="10K">10K</option>
+                <option value="14K">14K</option>
+                <option value="18K">18K</option>
+                <option value="925">925</option>
+              </select>
+              <label>&nbsp;$&nbsp;</label>
+              <input
+                type="number"
+                onChange={(e) => handleGoldPriceEdit(e.target.value)}
+                className="form-control text-center"
+                style={{ borderBottom: "1px solid black", borderRadius: 0 }}
+                aria-label="Price per gram"
+                value={formData["goldPrice"]}
+              />
               <label className={"mx-3"}>=</label>
               <label>{formData["goldTotal"].toFixed(2)}</label>
             </div>
@@ -312,10 +338,7 @@ function App() {
               <div className="col-12">
                 <div className="d-flex justify-content-between">
                   <h3 className="text-primary">Grand Total</h3>
-                  {/*<button onClick={clipBoadHandler} className="btn copy">*/}
-                  {/*<img src={copy} alt="Copy to clipboard"/>*/}
                   <h3 onClick={resetForm}>Clear</h3>
-                  {/*</button>*/}
                 </div>
                 <div className="p-2 row position-relative" style={{ border: "1px solid grey" }}>
                   <div className="col">
@@ -342,12 +365,6 @@ function App() {
                     })}
                   </div>
 
-                  {/*<div className="col-12 mt-2">*/}
-                  {/*  <p className="text-muted" style={{ fontSize: '16px', width: '100%' }}>*/}
-                  {/*    Including 15% Tariff.*/}
-                  {/*  </p>*/}
-                  {/*</div>*/}
-
                   <div className="position-absolute end-0 ps-0 w-auto">
                     <button onClick={clipBoadHandler} className="btn copy">
                       <img src={copy} alt="Copy to clipboard" />
@@ -358,51 +375,6 @@ function App() {
             </form>
           </div>
           {/*TOTAL CONTAINER END*/}
-
-
-          {/*/!*TOTAL CONTAINER 2*!/*/}
-          {/*<div className="total-container mt-4">*/}
-          {/*  <form className="row">*/}
-          {/*    <div className="col-12">*/}
-
-          {/*      <div className="p-2 row" style={{ border: "1px solid grey" }}>*/}
-          {/*        <div className="col">*/}
-          {/*          {[{name:'TTLB',value:250}, {name:'SI',value:275}, {name:'SI/ VS', value:325}, {name:'VS',value:400}, {name:'VS/ VVS', value:450}].map((value) => {*/}
-          {/*            return (*/}
-          {/*              <div className="input-group" key={value.name}>*/}
-          {/*                <span className="fs-5">{value.name} = </span>*/}
-          {/*                /!*<span className="fs-5">Si/ Vs = </span>*!/*/}
-          {/*                /!*<span className="fs-5">Vs = </span>*!/*/}
-          {/*                /!*<span className="fs-5">Vs/ Vvs = </span>*!/*/}
-          {/*                <span className={"fs-5 ms-2"}>$*/}
-          {/*                  {isNaN(parseFloat(formData["roundWeight"]))*/}
-          {/*                    ? Math.ceil(*/}
-          {/*                        ((formData["totalWithoutRound"] + 0 * value.value) **/}
-          {/*                          1.17) /*/}
-          {/*                          10*/}
-          {/*                      ) * 10*/}
-          {/*                    : Math.ceil(*/}
-          {/*                        ((formData["totalWithoutRound"] +*/}
-          {/*                          value.value * formData["roundWeight"]) **/}
-          {/*                          1.17) /*/}
-          {/*                          10*/}
-          {/*                      ) * 10}*/}
-          {/*                </span>*/}
-          {/*              </div>*/}
-          {/*            );*/}
-          {/*          })}*/}
-          {/*        </div>*/}
-
-          {/*        <div className="col-1 d-flex justify-content-end align-items-start">*/}
-          {/*          <button onClick={clipBoadHandler2} className="btn copy">*/}
-          {/*            <img src={copy} alt="Copy to clipboard" />*/}
-          {/*          </button>*/}
-          {/*        </div>*/}
-          {/*      </div>*/}
-          {/*    </div>*/}
-          {/*  </form>*/}
-          {/*</div>*/}
-          {/*/!*TOTAL CONTAINER 2 END*!/*/}
 
         </form>
       </section>
